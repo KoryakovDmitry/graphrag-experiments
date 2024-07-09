@@ -94,7 +94,7 @@ async def run_extract_entities(
         },
     )
 
-    graph = results.output
+    graph: nx.Graph = results.output
     # Map the "source_id" back to the "id" field
     for _, node in graph.nodes(data=True):  # type: ignore
         if node is not None:
