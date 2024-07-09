@@ -70,8 +70,36 @@ class PipelineBlobReportingConfig(PipelineReportingConfig[Literal[ReportingType.
     """The base directory for the reporting."""
 
 
+class PipelineS3ReportingConfig(PipelineReportingConfig[Literal[ReportingType.s3]]):
+    """Represents the S3 reporting configuration for the pipeline."""
+
+    type: Literal[ReportingType.s3] = ReportingType.s3
+    """The type of reporting."""
+
+    base_dir: str | None = pydantic_Field(
+        description="The base directory for the reporting.", default=None
+    )
+    """The base directory for the reporting."""
+
+    bucket_name: str = pydantic_Field(
+        description="The S3 bucket name for reporting", default=None
+    )
+    """The S3 bucket name for reporting"""
+
+    region_name: str | None = pydantic_Field(
+        description="The region name for the S3 bucket", default=None
+    )
+    """The region name for the S3 bucket"""
+
+    object_name: str | None = pydantic_Field(
+        description="Log file name in S3 bucket", default=None
+    )
+    """Log file name in S3 bucket"""
+
+
 PipelineReportingConfigTypes = (
-    PipelineFileReportingConfig
-    | PipelineConsoleReportingConfig
-    | PipelineBlobReportingConfig
+        PipelineFileReportingConfig
+        | PipelineConsoleReportingConfig
+        | PipelineBlobReportingConfig
+        | PipelineS3ReportingConfig
 )

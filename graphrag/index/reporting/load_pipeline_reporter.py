@@ -13,15 +13,17 @@ from graphrag.index.config import (
     PipelineBlobReportingConfig,
     PipelineFileReportingConfig,
     PipelineReportingConfig,
+    PipelineS3ReportingConfig,
 )
 
+from .s3_workflow_callbacks import S3WorkflowCallbacks
 from .blob_workflow_callbacks import BlobWorkflowCallbacks
 from .console_workflow_callbacks import ConsoleWorkflowCallbacks
 from .file_workflow_callbacks import FileWorkflowCallbacks
 
 
 def load_pipeline_reporter(
-    config: PipelineReportingConfig | None, root_dir: str | None
+        config: PipelineReportingConfig | None, root_dir: str | None
 ) -> WorkflowCallbacks:
     """Create a reporter for the given pipeline config."""
     config = config or PipelineFileReportingConfig(base_dir="reports")
@@ -41,6 +43,14 @@ def load_pipeline_reporter(
                 config.container_name,
                 base_dir=config.base_dir,
                 storage_account_blob_url=config.storage_account_blob_url,
+            )
+        case ReportingType.s3:
+            config = cast(PipelineS3ReportingConfig, config)
+            return S3WorkflowCallbacks(
+                base_dir=config.base_dir,
+                region_name=config.region_name,
+                object_name=config.object_name,
+                bucket_name=config.bucket_name,
             )
         case _:
             msg = f"Unknown reporting type: {config.type}"

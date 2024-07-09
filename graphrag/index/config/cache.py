@@ -74,9 +74,32 @@ class PipelineBlobCacheConfig(PipelineCacheConfig[Literal[CacheType.blob]]):
     """The storage account blob url for cache"""
 
 
+class PipelineS3CacheConfig(PipelineCacheConfig[Literal[CacheType.s3]]):
+    """Represents the S3 cache configuration for the pipeline."""
+
+    type: Literal[CacheType.s3] = CacheType.s3
+    """The type of cache."""
+
+    base_dir: str | None = pydantic_Field(
+        description="The base directory for the cache.", default=None
+    )
+    """The base directory for the cache."""
+
+    bucket_name: str = pydantic_Field(
+        description="The bucket name for the cache.", default=None
+    )
+    """The bucket name for the cache."""
+
+    region_name: str | None = pydantic_Field(
+        description="The AWS region name for the cache.", default=None
+    )
+    """The AWS region name for the cache."""
+
+
 PipelineCacheConfigTypes = (
-    PipelineFileCacheConfig
-    | PipelineMemoryCacheConfig
-    | PipelineBlobCacheConfig
-    | PipelineNoneCacheConfig
+        PipelineFileCacheConfig
+        | PipelineMemoryCacheConfig
+        | PipelineBlobCacheConfig
+        | PipelineNoneCacheConfig
+        | PipelineS3CacheConfig
 )

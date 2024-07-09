@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING, cast
 from graphrag.config.enums import CacheType
 from graphrag.index.config.cache import (
     PipelineBlobCacheConfig,
-    PipelineFileCacheConfig,
+    PipelineFileCacheConfig, PipelineS3CacheConfig,
 )
-from graphrag.index.storage import BlobPipelineStorage, FilePipelineStorage
+from graphrag.index.storage import BlobPipelineStorage, FilePipelineStorage, S3PipelineStorage
 
 if TYPE_CHECKING:
     from graphrag.index.config import (
@@ -44,6 +44,13 @@ def load_cache(config: PipelineCacheConfig | None, root_dir: str | None):
                 config.connection_string,
                 config.container_name,
                 storage_account_blob_url=config.storage_account_blob_url,
+            ).child(config.base_dir)
+            return JsonPipelineCache(storage)
+        case CacheType.s3:
+            config = cast(PipelineS3CacheConfig, config)
+            storage = S3PipelineStorage(
+                bucket_name=config.bucket_name,
+                region_name=config.region_name,
             ).child(config.base_dir)
             return JsonPipelineCache(storage)
         case _:

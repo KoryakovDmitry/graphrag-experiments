@@ -67,6 +67,28 @@ class PipelineBlobStorageConfig(PipelineStorageConfig[Literal[StorageType.blob]]
     """The storage account blob url."""
 
 
+class PipelineS3StorageConfig(PipelineStorageConfig[Literal[StorageType.s3]]):
+    """Represents the S3 storage configuration for the pipeline."""
+
+    type: Literal[StorageType.s3] = StorageType.s3
+    """The type of storage."""
+
+    bucket_name: str = pydantic_Field(
+        description="The S3 bucket name for storage", default=None
+    )
+    """The S3 bucket name for storage."""
+
+    region_name: str | None = pydantic_Field(
+        description="The region name for the S3 bucket", default=None
+    )
+    """The region name for the S3 bucket."""
+
+    base_dir: str | None = pydantic_Field(
+        description="The base directory for the storage.", default=None
+    )
+    """The base directory for the storage."""
+
+
 PipelineStorageConfigTypes = (
-    PipelineFileStorageConfig | PipelineMemoryStorageConfig | PipelineBlobStorageConfig
+        PipelineFileStorageConfig | PipelineMemoryStorageConfig | PipelineBlobStorageConfig | PipelineS3StorageConfig
 )
