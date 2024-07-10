@@ -27,3 +27,13 @@ class CacheConfig(BaseModel):
     storage_account_blob_url: str | None = Field(
         description="The storage account blob url to use.", default=None
     )
+    bucket_name: str = Field(
+        description="The S3 bucket name for reporting", default=None
+    )
+    """The S3 bucket name for reporting"""
+
+    region_name: str | None = Field(
+        description="The region name for the S3 bucket", default=None
+    )
+    """The region name for the S3 bucket"""
+

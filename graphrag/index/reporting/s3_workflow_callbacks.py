@@ -38,7 +38,7 @@ class S3WorkflowCallbacks(NoopWorkflowCallbacks):
             aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         )
 
-        if object_name == "":
+        if (object_name == "") or (object_name is None):
             object_name = f"report/{datetime.now(tz=timezone.utc).strftime('%Y-%m-%d-%H:%M:%S:%f')}.logs.json"
 
         self._object_name = str(Path(base_dir or "") / object_name)

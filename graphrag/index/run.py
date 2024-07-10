@@ -30,6 +30,9 @@ from .config import (
     PipelineBlobCacheConfig,
     PipelineBlobReportingConfig,
     PipelineBlobStorageConfig,
+    PipelineS3CacheConfig,
+    PipelineS3ReportingConfig,
+    PipelineS3StorageConfig,
     PipelineCacheConfigTypes,
     PipelineConfig,
     PipelineFileCacheConfig,
@@ -68,21 +71,21 @@ log = logging.getLogger(__name__)
 
 
 async def run_pipeline_with_config(
-    config_or_path: PipelineConfig | str,
-    workflows: list[PipelineWorkflowReference] | None = None,
-    dataset: pd.DataFrame | None = None,
-    storage: PipelineStorage | None = None,
-    cache: PipelineCache | None = None,
-    callbacks: WorkflowCallbacks | None = None,
-    progress_reporter: ProgressReporter | None = None,
-    input_post_process_steps: list[PipelineWorkflowStep] | None = None,
-    additional_verbs: VerbDefinitions | None = None,
-    additional_workflows: WorkflowDefinitions | None = None,
-    emit: list[TableEmitterType] | None = None,
-    memory_profile: bool = False,
-    run_id: str | None = None,
-    is_resume_run: bool = False,
-    **_kwargs: dict,
+        config_or_path: PipelineConfig | str,
+        workflows: list[PipelineWorkflowReference] | None = None,
+        dataset: pd.DataFrame | None = None,
+        storage: PipelineStorage | None = None,
+        cache: PipelineCache | None = None,
+        callbacks: WorkflowCallbacks | None = None,
+        progress_reporter: ProgressReporter | None = None,
+        input_post_process_steps: list[PipelineWorkflowStep] | None = None,
+        additional_verbs: VerbDefinitions | None = None,
+        additional_workflows: WorkflowDefinitions | None = None,
+        emit: list[TableEmitterType] | None = None,
+        memory_profile: bool = False,
+        run_id: str | None = None,
+        is_resume_run: bool = False,
+        **_kwargs: dict,
 ) -> AsyncIterable[PipelineRunResult]:
     """Run a pipeline with the given config.
 
@@ -120,12 +123,12 @@ async def run_pipeline_with_config(
         return load_cache(config or PipelineMemoryCacheConfig(), root_dir=root_dir)
 
     def _create_reporter(
-        config: PipelineReportingConfigTypes | None,
+            config: PipelineReportingConfigTypes | None,
     ) -> WorkflowCallbacks | None:
         return load_pipeline_reporter(config, root_dir) if config else None
 
     async def _create_input(
-        config: PipelineInputConfigTypes | None,
+            config: PipelineInputConfigTypes | None,
     ) -> pd.DataFrame | None:
         if config is None:
             return None
@@ -133,7 +136,7 @@ async def run_pipeline_with_config(
         return await load_input(config, progress_reporter, root_dir)
 
     def _create_postprocess_steps(
-        config: PipelineInputConfigTypes | None,
+            config: PipelineInputConfigTypes | None,
     ) -> list[PipelineWorkflowStep] | None:
         return config.post_process if config is not None else None
 
@@ -152,36 +155,36 @@ async def run_pipeline_with_config(
         raise ValueError(msg)
 
     async for table in run_pipeline(
-        workflows=workflows,
-        dataset=dataset,
-        storage=storage,
-        cache=cache,
-        callbacks=callbacks,
-        input_post_process_steps=post_process_steps,
-        memory_profile=memory_profile,
-        additional_verbs=additional_verbs,
-        additional_workflows=additional_workflows,
-        progress_reporter=progress_reporter,
-        emit=emit,
-        is_resume_run=is_resume_run,
+            workflows=workflows,
+            dataset=dataset,
+            storage=storage,
+            cache=cache,
+            callbacks=callbacks,
+            input_post_process_steps=post_process_steps,
+            memory_profile=memory_profile,
+            additional_verbs=additional_verbs,
+            additional_workflows=additional_workflows,
+            progress_reporter=progress_reporter,
+            emit=emit,
+            is_resume_run=is_resume_run,
     ):
         yield table
 
 
 async def run_pipeline(
-    workflows: list[PipelineWorkflowReference],
-    dataset: pd.DataFrame,
-    storage: PipelineStorage | None = None,
-    cache: PipelineCache | None = None,
-    callbacks: WorkflowCallbacks | None = None,
-    progress_reporter: ProgressReporter | None = None,
-    input_post_process_steps: list[PipelineWorkflowStep] | None = None,
-    additional_verbs: VerbDefinitions | None = None,
-    additional_workflows: WorkflowDefinitions | None = None,
-    emit: list[TableEmitterType] | None = None,
-    memory_profile: bool = False,
-    is_resume_run: bool = False,
-    **_kwargs: dict,
+        workflows: list[PipelineWorkflowReference],
+        dataset: pd.DataFrame,
+        storage: PipelineStorage | None = None,
+        cache: PipelineCache | None = None,
+        callbacks: WorkflowCallbacks | None = None,
+        progress_reporter: ProgressReporter | None = None,
+        input_post_process_steps: list[PipelineWorkflowStep] | None = None,
+        additional_verbs: VerbDefinitions | None = None,
+        additional_workflows: WorkflowDefinitions | None = None,
+        emit: list[TableEmitterType] | None = None,
+        memory_profile: bool = False,
+        is_resume_run: bool = False,
+        **_kwargs: dict,
 ) -> AsyncIterable[PipelineRunResult]:
     """Run the pipeline.
 
@@ -257,16 +260,16 @@ async def run_pipeline(
             workflow.add_table(workflow_id, table)
 
     async def write_workflow_stats(
-        workflow: Workflow,
-        workflow_result: WorkflowRunResult,
-        workflow_start_time: float,
+            workflow: Workflow,
+            workflow_result: WorkflowRunResult,
+            workflow_start_time: float,
     ) -> None:
         for vt in workflow_result.verb_timings:
             stats.workflows[workflow.name][f"{vt.index}_{vt.verb}"] = vt.timing
 
         workflow_end_time = time.time()
         stats.workflows[workflow.name]["overall"] = (
-            workflow_end_time - workflow_start_time
+                workflow_end_time - workflow_start_time
         )
         stats.total_runtime = time.time() - start_time
         await dump_stats()
@@ -311,7 +314,7 @@ async def run_pipeline(
             log.info("Running workflow: %s...", workflow_name)
 
             if is_resume_run and await storage.has(
-                f"{workflow_to_run.workflow.name}.parquet"
+                    f"{workflow_to_run.workflow.name}.parquet"
             ):
                 log.info("Skipping %s because it already exists", workflow_name)
                 continue
@@ -341,7 +344,7 @@ async def run_pipeline(
 
 
 def _create_callback_chain(
-    callbacks: WorkflowCallbacks | None, progress: ProgressReporter | None
+        callbacks: WorkflowCallbacks | None, progress: ProgressReporter | None
 ) -> WorkflowCallbacks:
     """Create a callbacks manager."""
     manager = WorkflowCallbacksManager()
@@ -353,7 +356,7 @@ def _create_callback_chain(
 
 
 async def _save_profiler_stats(
-    storage: PipelineStorage, workflow_name: str, profile: MemoryProfile
+        storage: PipelineStorage, workflow_name: str, profile: MemoryProfile
 ):
     """Save the profiler stats to the storage."""
     await storage.set(
@@ -378,10 +381,10 @@ async def _save_profiler_stats(
 
 
 async def _run_post_process_steps(
-    post_process: list[PipelineWorkflowStep] | None,
-    dataset: pd.DataFrame,
-    context: PipelineRunContext,
-    callbacks: WorkflowCallbacks,
+        post_process: list[PipelineWorkflowStep] | None,
+        dataset: pd.DataFrame,
+        context: PipelineRunContext,
+        callbacks: WorkflowCallbacks,
 ) -> pd.DataFrame:
     """Run the pipeline.
 
@@ -421,27 +424,27 @@ def _apply_substitutions(config: PipelineConfig, run_id: str) -> PipelineConfig:
     substitutions = {"timestamp": run_id}
 
     if (
-        isinstance(
-            config.storage, PipelineFileStorageConfig | PipelineBlobStorageConfig
-        )
-        and config.storage.base_dir
+            isinstance(
+                config.storage, PipelineFileStorageConfig | PipelineBlobStorageConfig | PipelineS3StorageConfig
+            )
+            and config.storage.base_dir
     ):
         config.storage.base_dir = Template(config.storage.base_dir).substitute(
             substitutions
         )
     if (
-        isinstance(config.cache, PipelineFileCacheConfig | PipelineBlobCacheConfig)
-        and config.cache.base_dir
+            isinstance(config.cache, PipelineFileCacheConfig | PipelineBlobCacheConfig | PipelineS3CacheConfig)
+            and config.cache.base_dir
     ):
         config.cache.base_dir = Template(config.cache.base_dir).substitute(
             substitutions
         )
 
     if (
-        isinstance(
-            config.reporting, PipelineFileReportingConfig | PipelineBlobReportingConfig
-        )
-        and config.reporting.base_dir
+            isinstance(
+                config.reporting, PipelineFileReportingConfig | PipelineBlobReportingConfig | PipelineS3ReportingConfig
+            )
+            and config.reporting.base_dir
     ):
         config.reporting.base_dir = Template(config.reporting.base_dir).substitute(
             substitutions
@@ -451,9 +454,9 @@ def _apply_substitutions(config: PipelineConfig, run_id: str) -> PipelineConfig:
 
 
 def _create_run_context(
-    storage: PipelineStorage,
-    cache: PipelineCache,
-    stats: PipelineRunStats,
+        storage: PipelineStorage,
+        cache: PipelineCache,
+        stats: PipelineRunStats,
 ) -> PipelineRunContext:
     """Create the run context for the pipeline."""
     return PipelineRunContext(

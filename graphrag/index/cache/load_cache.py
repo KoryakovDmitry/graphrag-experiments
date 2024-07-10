@@ -51,7 +51,8 @@ def load_cache(config: PipelineCacheConfig | None, root_dir: str | None):
             storage = S3PipelineStorage(
                 bucket_name=config.bucket_name,
                 region_name=config.region_name,
-            ).child(config.base_dir)
+                path_prefix=config.base_dir,
+            )
             return JsonPipelineCache(storage)
         case _:
             msg = f"Unknown cache type: {config.type}"

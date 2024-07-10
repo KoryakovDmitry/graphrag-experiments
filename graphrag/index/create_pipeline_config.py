@@ -23,7 +23,7 @@ from graphrag.index.config.cache import (
     PipelineCacheConfigTypes,
     PipelineFileCacheConfig,
     PipelineMemoryCacheConfig,
-    PipelineNoneCacheConfig,
+    PipelineNoneCacheConfig, PipelineS3CacheConfig,
 )
 from graphrag.index.config.input import (
     PipelineCSVInputConfig,
@@ -37,13 +37,13 @@ from graphrag.index.config.reporting import (
     PipelineBlobReportingConfig,
     PipelineConsoleReportingConfig,
     PipelineFileReportingConfig,
-    PipelineReportingConfigTypes,
+    PipelineReportingConfigTypes, PipelineS3ReportingConfig,
 )
 from graphrag.index.config.storage import (
     PipelineBlobStorageConfig,
     PipelineFileStorageConfig,
     PipelineMemoryStorageConfig,
-    PipelineStorageConfigTypes,
+    PipelineStorageConfigTypes, PipelineS3StorageConfig,
 )
 from graphrag.index.config.workflow import (
     PipelineWorkflowReference,
@@ -69,7 +69,6 @@ from graphrag.index.workflows.default_workflows import (
 
 log = logging.getLogger(__name__)
 
-
 entity_name_embedding = "entity.name"
 entity_description_embedding = "entity.description"
 relationship_description_embedding = "relationship.description"
@@ -90,7 +89,6 @@ all_embeddings: set[str] = {
     text_unit_text_embedding,
 }
 required_embeddings: set[str] = {entity_description_embedding}
-
 
 builtin_document_attributes: set[str] = {
     "id",
@@ -116,8 +114,8 @@ def create_pipeline_config(settings: GraphRagConfig, verbose=False) -> PipelineC
     skip_workflows = _determine_skip_workflows(settings)
     embedded_fields = _get_embedded_fields(settings)
     covariates_enabled = (
-        settings.claim_extraction.enabled
-        and create_final_covariates not in skip_workflows
+            settings.claim_extraction.enabled
+            and create_final_covariates not in skip_workflows
     )
 
     result = PipelineConfig(
@@ -155,8 +153,8 @@ def _get_embedded_fields(settings: GraphRagConfig) -> set[str]:
 def _determine_skip_workflows(settings: GraphRagConfig) -> list[str]:
     skip_workflows = settings.skip_workflows
     if (
-        create_final_covariates in skip_workflows
-        and join_text_units_to_covariate_ids not in skip_workflows
+            create_final_covariates in skip_workflows
+            and join_text_units_to_covariate_ids not in skip_workflows
     ):
         skip_workflows.append(join_text_units_to_covariate_ids)
     return skip_workflows
@@ -179,10 +177,10 @@ def _log_llm_settings(settings: GraphRagConfig) -> None:
 
 
 def _document_workflows(
-    settings: GraphRagConfig, embedded_fields: set[str]
+        settings: GraphRagConfig, embedded_fields: set[str]
 ) -> list[PipelineWorkflowReference]:
     skip_document_raw_content_embedding = (
-        document_raw_content_embedding not in embedded_fields
+            document_raw_content_embedding not in embedded_fields
     )
     return [
         PipelineWorkflowReference(
@@ -207,9 +205,9 @@ def _document_workflows(
 
 
 def _text_unit_workflows(
-    settings: GraphRagConfig,
-    covariates_enabled: bool,
-    embedded_fields: set[str],
+        settings: GraphRagConfig,
+        covariates_enabled: bool,
+        embedded_fields: set[str],
 ) -> list[PipelineWorkflowReference]:
     skip_text_unit_embedding = text_unit_text_embedding not in embedded_fields
     return [
@@ -270,14 +268,14 @@ def _get_embedding_settings(settings: TextEmbeddingConfig, embedding_name: str) 
 
 
 def _graph_workflows(
-    settings: GraphRagConfig, embedded_fields: set[str]
+        settings: GraphRagConfig, embedded_fields: set[str]
 ) -> list[PipelineWorkflowReference]:
     skip_entity_name_embedding = entity_name_embedding not in embedded_fields
     skip_entity_description_embedding = (
-        entity_description_embedding not in embedded_fields
+            entity_description_embedding not in embedded_fields
     )
     skip_relationship_description_embedding = (
-        relationship_description_embedding not in embedded_fields
+            relationship_description_embedding not in embedded_fields
     )
     return [
         PipelineWorkflowReference(
@@ -352,14 +350,14 @@ def _graph_workflows(
 
 
 def _community_workflows(
-    settings: GraphRagConfig, covariates_enabled: bool, embedded_fields: set[str]
+        settings: GraphRagConfig, covariates_enabled: bool, embedded_fields: set[str]
 ) -> list[PipelineWorkflowReference]:
     skip_community_title_embedding = community_title_embedding not in embedded_fields
     skip_community_summary_embedding = (
-        community_summary_embedding not in embedded_fields
+            community_summary_embedding not in embedded_fields
     )
     skip_community_full_content_embedding = (
-        community_full_content_embedding not in embedded_fields
+            community_full_content_embedding not in embedded_fields
     )
     return [
         PipelineWorkflowReference(name=create_final_communities),
@@ -392,7 +390,7 @@ def _community_workflows(
 
 
 def _covariate_workflows(
-    settings: GraphRagConfig,
+        settings: GraphRagConfig,
 ) -> list[PipelineWorkflowReference]:
     return [
         PipelineWorkflowReference(
@@ -410,7 +408,7 @@ def _covariate_workflows(
 
 
 def _get_pipeline_input_config(
-    settings: GraphRagConfig,
+        settings: GraphRagConfig,
 ) -> PipelineInputConfigTypes:
     file_type = settings.input.file_type
     match file_type:
@@ -445,7 +443,7 @@ def _get_pipeline_input_config(
 
 
 def _get_reporting_config(
-    settings: GraphRagConfig,
+        settings: GraphRagConfig,
 ) -> PipelineReportingConfigTypes:
     """Get the reporting config from the settings."""
     match settings.reporting.type:
@@ -468,6 +466,23 @@ def _get_reporting_config(
                 base_dir=settings.reporting.base_dir,
                 storage_account_blob_url=storage_account_blob_url,
             )
+        case ReportingType.s3:
+            base_dir = settings.reporting.base_dir
+            bucket_name = settings.reporting.bucket_name
+            region_name = settings.reporting.region_name
+            object_name = settings.reporting.object_name
+            if region_name is None:
+                msg = "region_name must be provided for s3 cache."
+                raise ValueError(msg)
+            if bucket_name is None:
+                msg = "bucket_name must be provided for s3 cache."
+                raise ValueError(msg)
+            return PipelineS3ReportingConfig(
+                base_dir=base_dir,
+                bucket_name=bucket_name,
+                region_name=region_name,
+                object_name=object_name,
+            )
         case ReportingType.console:
             return PipelineConsoleReportingConfig()
         case _:
@@ -476,7 +491,7 @@ def _get_reporting_config(
 
 
 def _get_storage_config(
-    settings: GraphRagConfig,
+        settings: GraphRagConfig,
 ) -> PipelineStorageConfigTypes:
     """Get the storage type from the settings."""
     root_dir = settings.root_dir
@@ -506,6 +521,21 @@ def _get_storage_config(
                 base_dir=settings.storage.base_dir,
                 storage_account_blob_url=storage_account_blob_url,
             )
+        case StorageType.s3:
+            base_dir = settings.storage.base_dir
+            bucket_name = settings.storage.bucket_name
+            region_name = settings.storage.region_name
+            if region_name is None:
+                msg = "region_name must be provided for s3 cache."
+                raise ValueError(msg)
+            if bucket_name is None:
+                msg = "bucket_name must be provided for s3 cache."
+                raise ValueError(msg)
+            return PipelineS3StorageConfig(
+                base_dir=base_dir,
+                bucket_name=bucket_name,
+                region_name=region_name,
+            )
         case _:
             # relative to the root_dir
             base_dir = settings.storage.base_dir
@@ -516,7 +546,7 @@ def _get_storage_config(
 
 
 def _get_cache_config(
-    settings: GraphRagConfig,
+        settings: GraphRagConfig,
 ) -> PipelineCacheConfigTypes:
     """Get the cache type from the settings."""
     match settings.cache.type:
@@ -542,6 +572,21 @@ def _get_cache_config(
                 container_name=container_name,
                 base_dir=settings.cache.base_dir,
                 storage_account_blob_url=storage_account_blob_url,
+            )
+        case CacheType.s3:
+            base_dir = settings.cache.base_dir
+            bucket_name = settings.cache.bucket_name
+            region_name = settings.cache.region_name
+            if region_name is None:
+                msg = "region_name must be provided for s3 cache."
+                raise ValueError(msg)
+            if bucket_name is None:
+                msg = "bucket_name must be provided for s3 cache."
+                raise ValueError(msg)
+            return PipelineS3CacheConfig(
+                base_dir=base_dir,
+                bucket_name=bucket_name,
+                region_name=region_name,
             )
         case _:
             # relative to root dir

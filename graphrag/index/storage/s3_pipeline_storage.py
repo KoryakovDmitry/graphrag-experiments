@@ -57,8 +57,11 @@ class S3PipelineStorage(PipelineStorage):
                     },
                 )
             except ClientError as e:
-                log.exception("Error creating bucket: %s", e)
-                raise
+                if e.response['Error']['Code'] == 'BucketAlreadyExists':
+                    log.warning(f"Bucket {self._bucket_name} already exists.")
+                else:
+                    log.exception("Error creating bucket: %s", e)
+                    raise
 
     def bucket_exists(self) -> bool:
         """Check if the bucket exists."""
@@ -162,7 +165,7 @@ class S3PipelineStorage(PipelineStorage):
                 coding = encoding or self._encoding
                 self._s3_client.put_object(Bucket=self._bucket_name, Key=key, Body=value.encode(coding))
         except Exception:
-            log.exception("Error setting key %s: %s", key)
+            log.exception(f"Error setting key {key}")
 
     async def has(self, key: str) -> bool:
         """Check if a key exists in the storage."""
