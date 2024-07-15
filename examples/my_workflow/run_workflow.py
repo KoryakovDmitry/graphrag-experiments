@@ -105,7 +105,7 @@ async def main():
             # timestamp_column="date(yyyyMMddHHmmss)",
             # timestamp_format="%Y%m%d%H%M%S",
             title_column="title",
-            document_attribute_columns=["id", "model_name", "make_name", "src"]
+            document_attribute_columns=["id", "model_name", "make_name", "src"],
         ),
         embed_graph=EmbedGraphConfig(
             enabled=False,
@@ -159,7 +159,7 @@ async def main():
                 "Transmission",
                 "User",
                 "Weight",
-                "Year"
+                "Year",
             ],
             max_gleanings=0,
         ),
@@ -195,11 +195,30 @@ async def main():
         ),
         cluster_graph=ClusterGraphConfig(max_cluster_size=10),
         umap=UmapConfig(enabled=False),
-        local_search=LocalSearchConfig(),
-        global_search=GlobalSearchConfig(),
+        local_search=LocalSearchConfig(
+            text_unit_prop=0.5,
+            community_prop=0.1,
+            conversation_history_max_turns=5,
+            top_k_entities=10,
+            top_k_relationships=10,
+            max_tokens=12_000,
+            llm_max_tokens=2000,
+        ),
+        global_search=GlobalSearchConfig(
+            temperature=0.0,
+            top_p=1,
+            n=1,
+            max_tokens=12_000,
+            data_max_tokens=12_000,
+            reduce_max_tokens=2_000,
+            concurrency=32,
+        ),
         encoding_model="cl100k_base",
         skip_workflows=[],
-        parallelization=ParallelizationParameters(stagger=0.3, num_threads=50),
+        parallelization=ParallelizationParameters(
+            stagger=0.3,
+            num_threads=50,
+        ),
         async_mode=AsyncType.Threaded,
     )
 
@@ -213,12 +232,12 @@ async def main():
     outputs = []
     # encountered_errors = False
     async for output in run_pipeline_with_config(
-            pipeline_cfg,
-            run_id=run_id,
-            memory_profile=memory_profile,
-            progress_reporter=progress_reporter,
-            emit=emit,
-            is_resume_run=resume,
+        pipeline_cfg,
+        run_id=run_id,
+        memory_profile=memory_profile,
+        progress_reporter=progress_reporter,
+        emit=emit,
+        is_resume_run=resume,
     ):
         # if output.errors and len(output.errors) > 0:
         #     encountered_errors = True
