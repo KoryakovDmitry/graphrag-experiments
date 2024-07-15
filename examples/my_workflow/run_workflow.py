@@ -60,6 +60,7 @@ async def main():
     verbose = True
     memory_profile = False
     resume = False
+    experiment_name = "car-v0"
 
     settings = GraphRagConfig(
         root_dir=root_dir,
@@ -77,17 +78,34 @@ async def main():
             region_name="eu-north-1",
         ),
         cache=CacheConfig(
-            type=CacheType.s3,
-            base_dir="cache",
-            bucket_name="aiuc-dev-1",
-            region_name="eu-north-1",
+            type=CacheType.file,
+            base_dir=f"cache_{experiment_name}",
         ),
+        # cache=CacheConfig(
+        #     type=CacheType.s3,
+        #     base_dir=f"cache_{experiment_name}",
+        #     bucket_name="aiuc-dev-1",
+        #     region_name="eu-north-1",
+        # ),
+        # input=InputConfig(
+        #     type=InputType.file,
+        #     file_type=InputFileType.text,
+        #     base_dir="input",
+        #     encoding="utf-8",
+        #     file_pattern=".*\\.txt$",
+        # ),
         input=InputConfig(
             type=InputType.file,
-            file_type=InputFileType.text,
+            file_type=InputFileType.csv,
             base_dir="input",
             encoding="utf-8",
-            file_pattern=".*\\.txt$",
+            file_pattern=".*\\.csv$",
+            source_column="url",
+            text_column="content",
+            # timestamp_column="date(yyyyMMddHHmmss)",
+            # timestamp_format="%Y%m%d%H%M%S",
+            title_column="title",
+            document_attribute_columns=["id", "model_name", "make_name", "src"]
         ),
         embed_graph=EmbedGraphConfig(
             enabled=False,
@@ -111,7 +129,38 @@ async def main():
                 model="gpt-4o",
             ),
             prompt="prompts/entity_extraction.txt",
-            entity_types=["organization", "person", "geo", "event"],
+            # entity_types=["organization", "person", "geo", "event"],
+            entity_types=[
+                "Accidents",
+                "Author",
+                "Body",
+                "Car",
+                "Competitors",
+                "Costs",
+                "Drivetrain",
+                "Engine",
+                "Exterior",
+                "Features",
+                "Generation",
+                "Interior",
+                "Make",
+                "Mileage",
+                "Model",
+                "Opinion",
+                "Owners",
+                "Package",
+                "Performance",
+                "Predecessor",
+                "Segment",
+                "Series",
+                "Size",
+                "Source",
+                "Successor",
+                "Transmission",
+                "User",
+                "Weight",
+                "Year"
+            ],
             max_gleanings=0,
         ),
         summarize_descriptions=SummarizeDescriptionsConfig(
@@ -150,7 +199,7 @@ async def main():
         global_search=GlobalSearchConfig(),
         encoding_model="cl100k_base",
         skip_workflows=[],
-        parallelization=ParallelizationParameters(stagger=0.3, num_threads=4),
+        parallelization=ParallelizationParameters(stagger=0.3, num_threads=50),
         async_mode=AsyncType.Threaded,
     )
 
